@@ -1,41 +1,70 @@
-// pages/index.js
 import Link from "next/link";
 import fs from "fs/promises";
 import path from "path";
+import Layout from "@/components/Layout";
 
 export default function Home({ trendingMovies }) {
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">Trending Movies</h1>
-      <ul className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {trendingMovies.map((movie) => (
-          <li key={movie.id} className="bg-white p-4 rounded-lg shadow-md">
-            <Link href={`/movies/${movie.id}`}>
-              <div className="text-lg font-semibold text-black hover:underline">
-                {movie.title}
-              </div>
-            </Link>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-4 space-x-4">
-        <Link href="/genres">
-          <button className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
-            Browse Genres
-          </button>
-        </Link>
-        <Link href="/movies">
-          <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
-            All Movies
-          </button>
-        </Link>
-        <Link href="/director">
-          <button className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
-            All Directors
-          </button>
-        </Link>
+    <Layout>
+      <div className="container mx-auto px-4 py-12">
+        <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
+          <div className="container mx-auto px-4 py-12">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-600">
+              Trending Movies
+            </h1>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+              {trendingMovies.map((movie) => (
+                <Link
+                  key={movie.id}
+                  href={`/movies/${movie.id}`}
+                  className="group"
+                >
+                  <div className="relative bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+                    <div className="h-48 bg-gray-200 flex items-center justify-center">
+                      <span className="text-gray-500 text-sm">
+                        Movie Poster
+                      </span>
+                    </div>
+                    <div className="p-6">
+                      <h2 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-indigo-600 transition-colors">
+                        {movie.title}
+                      </h2>
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {movie.genres?.map((g) => g.name).join(", ") ||
+                          "No genres"}
+                      </p>
+                    </div>
+                    <div className="absolute inset-0 border-4 border-transparent group-hover:border-indigo-500 rounded-2xl transition-all" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <div className="flex flex-wrap justify-center gap-4">
+              <Link href="/genres">
+                <button className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-300">
+                  Browse Genres
+                </button>
+              </Link>
+              <Link href="/movies">
+                <button className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300">
+                  All Movies
+                </button>
+              </Link>
+              <Link href="/director">
+                <button className="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors duration-300">
+                  All Directors
+                </button>
+              </Link>
+              <Link href="/help/123">
+                <button className="px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg shadow-md hover:bg-purple-700 transition-colors duration-300">
+                  Help
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 }
 

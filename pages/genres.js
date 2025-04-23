@@ -1,22 +1,43 @@
-// pages/genres.js
-import fs from 'fs/promises';
-import path from 'path';
-import Link from 'next/link';
+import fs from "fs/promises";
+import path from "path";
+import Link from "next/link";
+import Layout from "@/components/Layout";
 
 export default function GenresPage({ genres }) {
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">Genres</h1>
-      <ul className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {genres.map(genre => (
-          <li key={genre.id} className="bg-white p-4 rounded-lg shadow-md">
-            <Link href={`/genres/${genre.id}`}>
-              <div className="text-lg font-semibold hover:underline text-black">{genre.name}</div>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Layout>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
+        <div className="container mx-auto px-4 py-12">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-600">
+            Explore Genres
+          </h1>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {genres.map((genre) => (
+              <Link
+                key={genre.id}
+                href={`/genres/${genre.id}`}
+                className="group"
+              >
+                <div className="relative bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+                  <div className="h-48 bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-500 text-sm">Genre Image</span>
+                  </div>
+                  <div className="p-6">
+                    <h2 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-indigo-600 transition-colors">
+                      {genre.name}
+                    </h2>
+                    <p className="text-sm text-gray-600 line-clamp-2">
+                      Explore movies in the {genre.name} genre
+                    </p>
+                  </div>
+                  <div className="absolute inset-0 border-4 border-transparent group-hover:border-indigo-500 rounded-2xl transition-all" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Layout>
   );
 }
 
@@ -24,7 +45,7 @@ export async function getServerSideProps() {
   const filePath = path.join(process.cwd(), "public", "data", "movie_db.json");
   const data = await fs.readFile(filePath);
   const jsonData = JSON.parse(data);
-  const genres = jsonData.genres;
+  const genres = jsonData.genres; // Convert genres object to array
 
   return {
     props: {
