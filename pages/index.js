@@ -1,9 +1,23 @@
 import Link from "next/link";
-import fs from "fs/promises";
 import path from "path";
 import Layout from "@/components/Layout";
+import { supabase } from "./lib/supabaseClient";
+import {
+  Box,
+  Container,
+  Typography,
+  Grid,
+  Card,
+  CardActionArea,
+  CardContent,
+  CardMedia,
+  Button,
+  useTheme,
+} from "@mui/material";
 
 export default function Home({ trendingMovies }) {
+  const theme = useTheme();
+ 
   return (
     <Layout>
       <div className="container mx-auto px-4 py-12">
@@ -65,19 +79,28 @@ export default function Home({ trendingMovies }) {
         </div>
       </div>
     </Layout>
+
   );
 }
 
 export async function getStaticProps() {
-  const filePath = path.join(process.cwd(), "public", "data", "movie_db.json");
-  const data = await fs.readFile(filePath);
-  const jsonData = JSON.parse(data);
-  const trendingMovies = jsonData.movies.slice(0, 5); // Assuming top 5 are trending
+  // fetch top 5 movies, ordered by rating descending
+  const { data: trendingMovies, error } = await supabase
+    .from("movies")
+    .select("*")
+    .order("rating", { ascending: false })
+    .limit(5);
+
+  if (error) {
+    console.error("Error fetching trending movies:", error);
+    return {
+      props: { trendingMovies: [] },
+      revalidate: 10,
+    };
+  }
 
   return {
-    props: {
-      trendingMovies,
-    },
+    props: { trendingMovies },
     revalidate: 10,
   };
 }

@@ -1,7 +1,6 @@
-import fs from "fs/promises";
-import path from "path";
 import Link from "next/link";
 import Layout from "@/components/Layout";
+import { supabase } from "../lib/supabaseClient";
 
 export default function GenreDetails({ genre, movies }) {
   if (!genre) {
@@ -52,7 +51,6 @@ export default function GenreDetails({ genre, movies }) {
                       <h2 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-indigo-600 transition-colors">
                         {movie.title}
                       </h2>
-
                     </div>
                     <div className="absolute inset-0 border-4 border-transparent group-hover:border-indigo-500 rounded-2xl transition-all" />
                   </div>
@@ -71,21 +69,34 @@ export default function GenreDetails({ genre, movies }) {
 }
 
 export async function getServerSideProps(context) {
-  const filePath = path.join(process.cwd(), "public", "data", "movie_db.json");
-  const data = await fs.readFile(filePath);
-  const jsonData = JSON.parse(data);
-  const genre = jsonData.genres.find((g) => g.id === context.params.id);
-  const movies = jsonData.movies.filter((m) => m.genreId === context.params.id);
-  if (!genre) {
-    return {
-      notFound: true,
-    };
+  const { id } = context.params;
+
+  // Fetch the genre
+  const { data: genre, error: genreError } = await supabase
+    .from("genres")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (genreError || !genre) {
+    return { notFound: true };
+  }
+
+  // Fetch all movies in that genre
+  const { data: movies, error: moviesError } = await supabase
+    .from("movies")
+    .select("*")
+    .eq("genreId", id);
+
+  if (moviesError) {
+    console.error("Error fetching movies for genre", id, moviesError);
+    // You could choose to still render the page with an empty list:
   }
 
   return {
     props: {
       genre,
-      movies,
+      movies: movies ?? [],
     },
   };
 }

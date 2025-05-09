@@ -1,7 +1,6 @@
-import fs from "fs/promises";
-import path from "path";
 import Link from "next/link";
 import Layout from "@/components/Layout";
+import { supabase } from "@/pages/lib/supabaseClient";
 
 export default function DirectorDetails({ director, movies }) {
   if (!director) {
@@ -43,44 +42,60 @@ export default function DirectorDetails({ director, movies }) {
   );
 }
 
-export async function getStaticProps(context) {
-  const filePath = path.join(process.cwd(), "public", "data", "movie_db.json");
-  const data = await fs.readFile(filePath);
-  const jsonData = JSON.parse(data);
-  const movie = jsonData.movies.find((m) => m.id === context.params.id);
+export async function getStaticPaths() {
+  // 1. Fetch all movie IDs from Supabase
+  const { data: movies, error } = await supabase.from("movies").select("id");
 
-  if (!movie) {
+  if (error) {
+    console.error("Error fetching movie IDs:", error);
     return {
-      notFound: true,
+      paths: [],
+      fallback: true,
     };
   }
 
-  const director = jsonData.directors.find((d) => d.id === movie.directorId);
+  // 2. Build the list of paths based on movie IDs
+  const paths = movies.map((m) => ({
+    params: { id: m.id },
+  }));
 
-  if (!director) {
-    return {
-      notFound: true,
-    };
+  return {
+    paths,
+    fallback: true, // pages not generated at build time will be SSR’d on first request
+  };
+}
+
+export async function getStaticProps({ params }) {
+  const { id } = params;
+
+  // 1. Fetch the movie to get its directorId
+  const { data: movie, error: movieError } = await supabase
+    .from("movies")
+    .select("directorId")
+    .eq("id", id)
+    .single();
+
+  if (movieError || !movie) {
+    // If the movie doesn't exist, return 404
+    return { notFound: true };
+  }
+
+  // 2. Fetch the director record
+  const { data: director, error: directorError } = await supabase
+    .from("directors")
+    .select("*")
+    .eq("id", movie.directorId)
+    .single();
+
+  if (directorError || !director) {
+    // If the director is missing, also return 404
+    return { notFound: true };
   }
 
   return {
     props: {
       director,
     },
-    revalidate: 10,
-  };
-}
-
-export async function getStaticPaths() {
-  const filePath = path.join(process.cwd(), "public", "data", "movie_db.json");
-  const data = await fs.readFile(filePath);
-  const jsonData = JSON.parse(data);
-  const paths = jsonData.movies.map((movie) => ({
-    params: { id: movie.id.toString() },
-  }));
-
-  return {
-    paths,
-    fallback: true,
+    revalidate: 10, // ISR: re-generate this page at most every 10 seconds
   };
 }

@@ -1,7 +1,6 @@
-import fs from "fs/promises";
-import path from "path";
 import Link from "next/link";
 import Layout from "@/components/Layout";
+import { supabase } from "../lib/supabaseClient";
 
 export default function MovieDetails({ movie, director, genres }) {
   if (!movie) {
@@ -63,11 +62,16 @@ export default function MovieDetails({ movie, director, genres }) {
 }
 
 export async function getStaticPaths() {
-  const filePath = path.join(process.cwd(), "public", "data", "movie_db.json");
-  const data = await fs.readFile(filePath);
-  const jsonData = JSON.parse(data);
-  const paths = jsonData.movies.map((movie) => ({
-    params: { id: movie.id.toString() },
+  // 1. Grab all movie IDs
+  const { data: movies, error } = await supabase.from("movies").select("id");
+
+  if (error) {
+    console.error("Error fetching movie IDs:", error);
+    return { paths: [], fallback: true };
+  }
+
+  const paths = movies.map((m) => ({
+    params: { id: m.id },
   }));
 
   return {
@@ -76,26 +80,42 @@ export async function getStaticPaths() {
   };
 }
 
-export async function getStaticProps(context) {
-  const filePath = path.join(process.cwd(), "public", "data", "movie_db.json");
-  const data = await fs.readFile(filePath);
-  const jsonData = JSON.parse(data);
-  const movie = jsonData.movies.find((m) => m.id === context.params.id);
+export async function getStaticProps({ params }) {
+  const { id } = params;
 
-  if (!movie) {
-    return {
-      notFound: true,
-    };
+  const { data: movie, error: movieError } = await supabase
+    .from("movies")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (movieError || !movie) {
+    return { notFound: true };
   }
 
-  const director = jsonData.directors[movie.directorId] || null;
-  const genres = jsonData.genres || {};
+  const { data: director, error: directorError } = await supabase
+    .from("directors")
+    .select("*")
+    .eq("id", movie.directorId)
+    .single();
+
+  if (directorError) {
+    console.error("Error fetching director:", directorError);
+  }
+
+  const { data: genres, error: genresError } = await supabase
+    .from("genres")
+    .select("*");
+
+  if (genresError) {
+    console.error("Error fetching genres:", genresError);
+  }
 
   return {
     props: {
       movie,
-      director,
-      genres,
+      director: director ?? null,
+      genres: genres ?? [],
     },
     revalidate: 10,
   };

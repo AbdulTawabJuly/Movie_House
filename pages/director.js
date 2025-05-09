@@ -4,26 +4,26 @@ import useSWR from "swr";
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function DirectorsPage() {
-  const { data, error } = useSWR("/data/movie_db.json", fetcher);
+  const { data: directors, error } = useSWR("/api/directors", fetcher);
+
+  console.log("Directors data:", directors);
 
   if (error)
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 flex items-center justify-center">
+      <div className="min-h-screen … flex items-center justify-center">
         <div className="text-center text-red-600 text-xl font-semibold">
           Failed to load directors
         </div>
       </div>
     );
-  if (!data)
+  if (!directors)
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 flex items-center justify-center">
+      <div className="min-h-screen … flex items-center justify-center">
         <div className="text-center text-gray-600 text-xl font-semibold">
           Loading...
         </div>
       </div>
     );
-
-  const directors = Object.values(data.directors); // Convert directors object to array
 
   return (
     <Layout>
@@ -52,13 +52,15 @@ export default function DirectorsPage() {
                     Movies Directed:
                   </p>
                   <ul className="text-sm text-gray-700 space-y-1">
-                    {data.movies
-                      .filter((movie) => movie.directorId === director.id)
-                      .map((movie) => (
+                    {director.movies.length > 0 ? (
+                      director.movies.map((movie) => (
                         <li key={movie.id} className="truncate">
-                          {movie.title}
+                          {movie.title} ({movie.releaseYear})
                         </li>
-                      ))}
+                      ))
+                    ) : (
+                      <li className="text-gray-500">No movies found</li>
+                    )}
                   </ul>
                 </div>
                 <div className="absolute inset-0 border-4 border-transparent group-hover:border-indigo-500 rounded-2xl transition-all" />

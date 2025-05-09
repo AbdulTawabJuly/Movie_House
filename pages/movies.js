@@ -1,7 +1,7 @@
-import fs from "fs/promises";
-import path from "path";
 import Link from "next/link";
 import Layout from "@/components/Layout";
+import { supabase } from "./lib/supabaseClient";
+
 
 export default function MoviesPage({ movies, genres }) {
   return (
@@ -43,17 +43,27 @@ export default function MoviesPage({ movies, genres }) {
 }
 
 export async function getStaticProps() {
-  const filePath = path.join(process.cwd(), "public", "data", "movie_db.json");
-  const data = await fs.readFile(filePath);
-  const jsonData = JSON.parse(data);
-  const movies = jsonData.movies;
-  const genres = jsonData.genres;
+  // fetch all movies and all genres in parallel
+  const [
+    { data: movies, error: moviesError },
+    { data: genres, error: genresError },
+  ] = await Promise.all([
+    supabase.from("movies").select("*"),
+    supabase.from("genres").select("*"),
+  ]);
+
+  if (moviesError) {
+    console.error("Error fetching movies:", moviesError);
+  }
+  if (genresError) {
+    console.error("Error fetching genres:", genresError);
+  }
 
   return {
     props: {
-      movies,
-      genres,
+      movies: movies ?? [],
+      genres: genres ?? [],
     },
-    revalidate: 10,
+    revalidate: 10, // ISR: rebuild at most every 10 seconds
   };
 }

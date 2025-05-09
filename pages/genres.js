@@ -1,9 +1,10 @@
-import fs from "fs/promises";
-import path from "path";
 import Link from "next/link";
 import Layout from "@/components/Layout";
+import { supabase } from "./lib/supabaseClient";
+
 
 export default function GenresPage({ genres }) {
+  console.log("Genres:", genres);
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
@@ -42,14 +43,17 @@ export default function GenresPage({ genres }) {
 }
 
 export async function getServerSideProps() {
-  const filePath = path.join(process.cwd(), "public", "data", "movie_db.json");
-  const data = await fs.readFile(filePath);
-  const jsonData = JSON.parse(data);
-  const genres = jsonData.genres; // Convert genres object to array
+  // pull all genres from your Supabase table
+  const { data: genres, error } = await supabase
+    .from('genres')
+    .select('*')
+
+  if (error) {
+    console.error('Supabase error fetching genres:', error)
+    return { props: { genres: [] } }
+  }
 
   return {
-    props: {
-      genres,
-    },
-  };
+    props: { genres },
+  }
 }
